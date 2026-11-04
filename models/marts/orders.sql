@@ -7,3 +7,4 @@ SELECT
     p.payment_method
 FROM {{ ref('stg_orders') }} o
 LEFT JOIN {{ ref('stg_payments') }} p ON o.order_id = p.order_id
+WHERE p.amount > 0
