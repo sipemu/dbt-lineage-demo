@@ -11,6 +11,10 @@ A small jaffle-shop-style dbt project that shows the [dbt-lineage](https://githu
 
 No warehouse, no Python and no `dbt compile` needed; the action parses the SQL directly.
 
+## Dashboards as exposures
+
+[`dashboards/`](dashboards/) holds two [anofox-visualization](https://github.com/DataZooDE/anofox-visualization) dashboards (plain DuckDB SQL). The [Exposures workflow](.github/workflows/exposures.yml) runs `dbt-lineage exposures anofox` on every change and commits [`models/exposures_dashboards.yml`](models/exposures_dashboards.yml), so a PR that touches `orders`, `customers` or `stg_payments` shows which dashboards it reaches, and the [lineage site](https://sipemu.github.io/dbt-lineage-demo/) draws them. Metabase, Tableau, Looker, Superset and Power BI work the same way (`dbt-lineage exposures <tool>`).
+
 ## Use it in your repo
 
 ```yaml
