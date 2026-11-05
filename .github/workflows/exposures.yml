@@ -1,0 +1,49 @@
+# Keep dbt exposures in sync with the dashboards: every anofox-visualization
+# dashboard under dashboards/ becomes an exposure in
+# models/exposures_dashboards.yml, so impact analysis (PR comment, site)
+# knows which dashboards a model change reaches.
+name: Exposures
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "dashboards/**"
+      - "models/**"
+      - ".github/workflows/exposures.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  exposures:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install dbt-lineage
+        env:
+          VERSION: 0.15.0
+        run: |
+          curl -fsSL "https://github.com/sipemu/dbt-lineage-viewer/releases/download/v$VERSION/dbt-lineage-v$VERSION-x86_64-unknown-linux-gnu.tar.gz" \
+            | tar -xz --strip-components=1
+          sudo mv dbt-lineage /usr/local/bin/
+
+      - name: Generate exposures from the dashboards
+        run: |
+          dbt-lineage exposures anofox --dashboards dashboards \
+            --url 'https://github.com/sipemu/dbt-lineage-demo/blob/main/dashboards/{name}.sql' \
+            --write models/exposures_dashboards.yml
+
+      - name: Commit if changed
+        run: |
+          if git diff --quiet -- models/exposures_dashboards.yml && git ls-files --error-unmatch models/exposures_dashboards.yml >/dev/null 2>&1; then
+            echo "Exposures are up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add models/exposures_dashboards.yml
+          git commit -m "Regenerate dashboard exposures"
+          git push
